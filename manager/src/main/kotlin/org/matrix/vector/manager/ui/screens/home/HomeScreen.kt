@@ -218,27 +218,21 @@ fun HomeScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
         ) {
             item {
-                StatusBanner(
-                    status = status,
-                    onCopyAll = {
-                        copyToClipboard(
-                            context,
-                            englishSections.joinToString("\n\n") { (heading, items) ->
-                                heading +
-                                    items.joinToString("") {
-                                        "\n  ${it.label}: ${it.value}${it.detail.orEmpty()}"
-                                    }
-                            },
-                            BuildConfig.MANAGER_PACKAGE_NAME,
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp, start = 8.dp)
+                        .clickable(
+                            // Keep Easter Egg :D
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = ::onBrandTap,
                         )
-                        eggScope.launch { snackbars.show(copied, SnackbarTone.Success) }
-                    },
-                    appearanceLabel = stringResource(R.string.appearance_title),
-                    onOpenAppearance = { showAppearance = true },
-                    languageLabel = stringResource(R.string.language_title),
-                    onOpenLanguage = { showLanguage = true },
-                    onBrandTap = ::onBrandTap,
                 )
+
+                StatusBanner(status = status)
                 Spacer(Modifier.height(16.dp))
             }
 
@@ -267,6 +261,43 @@ fun HomeScreen(
                 onInstall = viewModel::installManagerApp,
                 onRemoveConflicting = viewModel::removeConflictingManager,
             )
+
+            item {
+                Spacer(Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    IconButton(onClick = { showLanguage = true }) {
+                        Icon(Icons.Rounded.Translate, contentDescription = stringResource(R.string.language_title))
+                    }
+
+                    IconButton(onClick = { showAppearance = true }) {
+                        Icon(Icons.Rounded.Palette, contentDescription = stringResource(R.string.appearance_title))
+                    }
+
+                    IconButton(
+                        onClick = {
+                            copyToClipboard(
+                                context,
+                                englishSections.joinToString("\n\n") { (heading, items) ->
+                                    heading +
+                                        items.joinToString("") {
+                                            "\n  ${it.label}: ${it.value}${it.detail.orEmpty()}"
+                                        }
+                                },
+                                BuildConfig.MANAGER_PACKAGE_NAME,
+                            )
+                            eggScope.launch { snackbars.show(copied, SnackbarTone.Success) }
+                        }
+                    ) {
+                        Icon(
+                            Icons.Rounded.ContentCopy,
+                            contentDescription = stringResource(UiR.string.action_copy_all),
+                        )
+                    }
+                }
+            }
         }
      }
  
@@ -400,15 +431,10 @@ private fun LauncherPrompt(
  * (appearance, language, copy) sit in the same row, since there is no longer a separate header
  * surface to host them.
  */
+
 @Composable
 private fun StatusBanner(
-    status: FrameworkStatus,
-    onCopyAll: () -> Unit,
-    appearanceLabel: String,
-    onOpenAppearance: () -> Unit,
-    languageLabel: String,
-    onOpenLanguage: () -> Unit,
-    onBrandTap: () -> Unit,
+  status: FrameworkStatus,
 ) {
     val healthy = status.issues.isEmpty() && status.daemonUsable
     val container =
@@ -430,44 +456,15 @@ private fun StatusBanner(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = stringResource(R.string.app_name),
+                    stringResource(status.state.statusWordRes()),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier =
-                        Modifier.weight(1f)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = onBrandTap,
-                            ),
                 )
-                IconButton(onClick = onOpenLanguage) {
-                    Icon(Icons.Rounded.Translate, contentDescription = languageLabel)
-                }
-                IconButton(onClick = onOpenAppearance) {
-                    Icon(Icons.Rounded.Palette, contentDescription = appearanceLabel)
-                }
-                IconButton(onClick = onCopyAll) {
-                    Icon(
-                        Icons.Rounded.ContentCopy,
-                        contentDescription = stringResource(UiR.string.action_copy_all),
-                    )
-                }
             }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(status.state.statusWordRes()),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            val detailText =
-                buildList {
-                        status.versionLabel?.let { add(it) }
-                        status.apiVersion?.let { add("API $it") }
-                    }
-                    .joinToString("  ·  ")
-            if (detailText.isNotEmpty()) {
-                Spacer(Modifier.height(2.dp))
+
+            if (status.apiVersion != null) {
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = detailText,
+                    text = "API ${status.apiVersion}",
                     color = onContainer.copy(alpha = 0.75f),
                     style = MaterialTheme.typography.bodyMedium
                 )
