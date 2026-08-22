@@ -1,6 +1,5 @@
 package org.matrix.vector.manager.ui.screens.home
 import kotlinx.coroutines.CancellationException
-import org.matrix.vector.manager.data.repository.FrameworkUpdateState
 import org.matrix.vector.manager.data.repository.LaunchShortcut
 import org.matrix.vector.manager.data.repository.ManagerInstallStep
 import android.os.Build
@@ -444,10 +443,6 @@ class HomeViewModel(
                 sepolicyLoaded = sepolicy,
                 systemServerInjected = systemServer,
             )
-
-        if (versionCode > 0) {
-            viewModelScope.launch { ServiceLocator.frameworkUpdates.refresh(versionCode, commit) }
-        }
     }
 
     // --- filtering the rail by author ---------------------------------------------------------
@@ -498,14 +493,6 @@ class HomeViewModel(
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /**
-     * Whether a newer framework build exists, on the channel this device is actually on.
-     *
-     * Refreshed off the back of the status read rather than on its own timer: the version code it
-     * compares against comes from the same daemon call, and asking GitHub before we know what we
-     * are running would compare against zero.
-     */
-    val frameworkUpdate: StateFlow<FrameworkUpdateState> = ServiceLocator.frameworkUpdates.state
 
     /**
      * Re-reads both framework switches from the daemon, and is meant to be called again.

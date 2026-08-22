@@ -24,10 +24,8 @@ import androidx.navigation3.ui.NavDisplay
 import org.matrix.vector.manager.data.repository.VectorLogSource
 import org.matrix.vector.manager.data.repository.VectorStoreInstallHost
 import org.matrix.vector.manager.di.ServiceLocator
-import org.matrix.vector.manager.ui.navigation.Canary
 import org.matrix.vector.manager.ui.navigation.CrashTrace
 import org.matrix.vector.manager.ui.navigation.DeepLink
-import org.matrix.vector.manager.ui.navigation.FrameworkUpdate
 import org.matrix.vector.manager.ui.navigation.LogTrace
 import org.matrix.vector.manager.ui.navigation.Scope
 import org.matrix.vector.manager.ui.navigation.StoreDetail
@@ -38,13 +36,11 @@ import org.matrix.vector.manager.ui.navigation.Troubleshoot
 import org.matrix.vector.manager.ui.navigation.VectorFloatingNavSettings
 import org.matrix.vector.manager.ui.navigation.VectorNavPanelStore
 import org.matrix.vector.manager.ui.navigation.Web
-import org.matrix.vector.manager.ui.screens.canary.CanaryScreen
 import org.matrix.vector.manager.ui.screens.home.CrashTraceScreen
 import org.matrix.vector.manager.ui.screens.home.HomeScreen
 import org.matrix.vector.manager.ui.screens.modules.ModulesScreen
 import org.matrix.vector.manager.ui.screens.modules.ScopeScreen
 import org.matrix.vector.manager.ui.screens.report.TroubleshootScreen
-import org.matrix.vector.manager.ui.screens.update.FrameworkUpdateScreen
 import org.matrix.vector.manager.ui.screens.web.WebScreen
 import org.matrix.vector.manager.ui.screens.web.fetchStoreSubresource
 import org.matrix.vector.manager.ui.screens.web.forWebView
@@ -198,9 +194,7 @@ private fun EntryProviderScope<NavKey>.registerRoutes(navigator: Navigator) {
     entry<TopLevelRoute.Home> {
         HomeScreen(
             onOpenUrl = { url -> navigator.go(Web(url)) },
-            onOpenCanary = { navigator.go(Canary) },
             onOpenReport = { navigator.go(Troubleshoot) },
-            onOpenUpdate = { navigator.go(FrameworkUpdate()) },
             onOpenCrash = { navigator.go(CrashTrace) },
         )
     }
@@ -247,22 +241,6 @@ private fun EntryProviderScope<NavKey>.registerRoutes(navigator: Navigator) {
     }
     entry<Troubleshoot> {
         TroubleshootScreen(
-            onNavigateBack = { navigator.back() },
-            onOpenUrl = { url -> navigator.go(Web(url)) },
-            onOpenCanary = { navigator.go(Canary) },
-        )
-    }
-    entry<Canary> {
-        CanaryScreen(
-            onNavigateBack = { navigator.back() },
-            onOpenUrl = { url -> navigator.go(Web(url)) },
-            onInstall = { versionCode -> navigator.go(FrameworkUpdate(versionCode)) },
-            onOpenReport = { navigator.go(Troubleshoot) },
-        )
-    }
-    entry<FrameworkUpdate> { route ->
-        FrameworkUpdateScreen(
-            openOnVersionCode = route.versionCode.takeIf { it > 0 },
             onNavigateBack = { navigator.back() },
             onOpenUrl = { url -> navigator.go(Web(url)) },
         )

@@ -88,6 +88,17 @@ import org.matrix.vector.manager.BuildConfig
 import org.matrix.vector.ui.R as UiR
 import org.matrix.vector.manager.ui.screens.splash.WingedVictory
 
+/**
+ * Home is the front page of the *project*, not only of the app.
+ *
+ * A framework manager is opened by every user, and Vector is built by volunteers, so this screen
+ * spends its space on the two questions that matter on opening it: is the framework healthy (one
+ * line), and what has the project been doing (everything else).
+ *
+ * The activity window is a span of time rather than "the latest N commits" — six months by default,
+ * and the reader's to change from the appearance sheet. In a quiet stretch the page honestly reads
+ * *7 commits by 4 people*, which is real information about the project; a rolling N would hide that.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -108,8 +119,14 @@ fun HomeScreen(
     var showSplash by rememberSaveable { mutableStateOf(false) }
     var showAppearance by rememberSaveable { mutableStateOf(false) }
     var showLanguage by rememberSaveable { mutableStateOf(false) }
+    // Answered or waved away once per visit, not once per return to Home. Saved so that a rotation
+    // does not put a dialog back in front of someone who has just dismissed it.
     var showLauncherPrompt by rememberSaveable { mutableStateOf(true) }
 
+    // The status screen has its own copy of this ViewModel — a nav destination is its own store —
+    // so a shortcut pinned or an app installed from there is invisible to this one until it is
+    // asked again. Coming back to Home is when it is worth asking, and it is also the only moment
+    // the badge's hint can start running again, so today's tally of it is re-cut here too.
     LaunchedEffect(Unit) {
         viewModel.refreshPresence()
         viewModel.refreshStatusBadgeHint()
@@ -118,6 +135,8 @@ fun HomeScreen(
     val device = viewModel.device
     val daemonAlive = status.daemonUsable
     val sections = remember(status, device, context) { buildStatusSections(status, device, context) }
+    // The same facts again, in English, for the clipboard — a report is read by a maintainer who
+    // may not read the language this phone is set to.
     val englishSections =
         remember(status, device) {
             val english =
@@ -128,11 +147,16 @@ fun HomeScreen(
                 )
             buildStatusSections(status, device, english)
         }
+    // Read once per visit rather than watched: a crash cannot be recorded while this screen is on
+    // screen, because the process that would record it is the one drawing it.
     var crash by remember { mutableStateOf(CrashRecorder.newest(context)) }
     val copied = stringResource(UiR.string.copied)
     val shortcutRefused = stringResource(R.string.launcher_shortcut_refused)
     val installDone = stringResource(R.string.launcher_install_done)
 
+    // Four taps on the wordmark, with the remaining count announced from the second. Two taps
+    // could be an accident; past that the reader is clearly poking at it, so the app plays along
+    // rather than keeping a secret nobody would find.
     var brandTaps by remember { mutableStateOf(0) }
     var lastBrandTapAt by remember { mutableStateOf(0L) }
     val twoMore = stringResource(R.string.egg_two_more)
@@ -146,6 +170,9 @@ fun HomeScreen(
         brandTaps = if (now - lastBrandTapAt > BRAND_TAP_WINDOW_MS) 1 else brandTaps + 1
         lastBrandTapAt = now
         when (brandTaps) {
+            // The app's own snackbar, not a platform toast. A toast is drawn by the system in the
+            // system's style and ignores the theme entirely, which on a screen whose whole point
+            // is the surface underneath it reads as a message from another app.
             2 -> eggScope.launch { snackbars.show(twoMore) }
             3 -> eggScope.launch { snackbars.show(oneMore) }
             BRAND_TAPS_TO_SUMMON -> {
@@ -157,6 +184,7 @@ fun HomeScreen(
         }
     }
 
+
     fun open(url: String) {
         if (openExternally) {
             try {
@@ -165,6 +193,8 @@ fun HomeScreen(
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
             } catch (_: ActivityNotFoundException) {
+                // Nothing on the device took the intent. Falling back to the built-in viewer beats
+                // a link tap that does nothing at all.
                 onOpenUrl(url)
             }
         } else {
@@ -173,6 +203,12 @@ fun HomeScreen(
     }
 
     Scaffold(
+        // The header draws its own status-bar inset so it can run under the bar; letting the
+        // Scaffold consume it here would leave a band of plain background above the pane. The
+        // bottom is the Scaffold's to reserve, though: with the panels floating there is no
+        // navigation container underneath to have taken it, and the last row of the feed would end
+        // up behind three-button navigation. Already-consumed insets are excluded from this, so it
+        // still adds nothing in the arrangements where a container is there.
         snackbarHost = { SharedSnackbarHost(snackbars) },
     ) { padding ->
         val listState = rememberLazyListState()
@@ -189,6 +225,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .padding(bottom = 16.dp, start = 8.dp)
                         .clickable(
+                            // Keep Easter Egg :D
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = ::onBrandTap,
@@ -262,8 +299,8 @@ fun HomeScreen(
                 }
             }
         }
-    }
-
+     }
+ 
     LaunchedEffect(managerInstall) {
         if (managerInstall !is ManagerInstallStep.Done) return@LaunchedEffect
         viewModel.acknowledgeManagerInstall()
@@ -283,10 +320,17 @@ fun HomeScreen(
         HomeAppearanceSheet(onDismiss = { showAppearance = false })
     }
 
+    // Nothing in the launcher points at a parasitic manager, so someone who reached this screen
+    // through the root manager's action button has no way of finding it again — which is what #815
+    // reported. Asked once, on the first launch that could act on the answer, and never again after
+    // "Don't ask again" or after either remedy has been applied. Dismissing it any other way means
+    // "later": the offer stays on the status page and returns on the next launch.
     if (
         showLauncherPrompt &&
             presence.unreachable &&
             !promptDismissed &&
+            // With no usable daemon there is no APK to install and bigger problems to report
+            // first.
             status.daemonUsable
     ) {
         LauncherPrompt(
@@ -307,35 +351,46 @@ fun HomeScreen(
         )
     }
 
+    // Summoned by four taps on the wordmark. A dialog rather than an overlay inside the content,
+    // so it covers the navigation bar too — a splash framed by app chrome is not a splash.
     if (showSplash) {
         Dialog(
             onDismissRequest = { showSplash = false },
             properties =
                 DialogProperties(usePlatformDefaultWidth = false, dismissOnClickOutside = true),
         ) {
-            LocalizedOverlay {
-                Box(
-                    modifier =
-                        Modifier.fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) {
-                                showSplash = false
-                            }
-                ) {
-                    WingedVictory()
-                }
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(2800)
-                    showSplash = false
-                }
+LocalizedOverlay {
+
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) {
+                            showSplash = false
+                        }
+            ) {
+                WingedVictory()
+            }
+            LaunchedEffect(Unit) {
+                kotlinx.coroutines.delay(2800)
+                showSplash = false
             }
         }
+}
     }
 }
 
+/**
+ * The one prompt Vector shows unasked, and only when there is genuinely no way back in.
+ *
+ * Two buttons rather than four: the primary is whichever remedy this device can actually apply, and
+ * the other is the refusal. "Later" is the dialog's ordinary dismissal — tapping away or pressing
+ * back — because that is already what dismissing a dialog means, and a third button spelling it out
+ * would crowd out the two that do something.
+ */
 @Composable
 private fun LauncherPrompt(
     shortcutSupported: Boolean,
@@ -350,6 +405,8 @@ private fun LauncherPrompt(
         title = { Text(stringResource(R.string.launcher_prompt_title)) },
         text = { Text(stringResource(R.string.launcher_prompt_body)) },
         confirmButton = {
+            // A launcher that refuses pin requests leaves installing as the only remedy, so that is
+            // what the button offers rather than one that would visibly do nothing.
             if (shortcutSupported) {
                 TextButton(onClick = onCreateShortcut) {
                     Text(stringResource(R.string.launcher_shortcut_create))
@@ -366,8 +423,19 @@ private fun LauncherPrompt(
     )
 }
 
+/**
+ * The framework's health, as a Material card rather than JingMatrix's animated ambience header.
+ *
+ * Tonal colour carries the verdict at a glance — a reader should know the framework is fine or is
+ * not before reading a single word — and the actions that used to live in the header's own menu
+ * (appearance, language, copy) sit in the same row, since there is no longer a separate header
+ * surface to host them.
+ */
+
 @Composable
-private fun StatusBanner(status: FrameworkStatus) {
+private fun StatusBanner(
+  status: FrameworkStatus,
+) {
     val healthy = status.issues.isEmpty() && status.daemonUsable
     val container =
         if (healthy) MaterialTheme.colorScheme.primaryContainer
@@ -405,5 +473,7 @@ private fun StatusBanner(status: FrameworkStatus) {
     }
 }
 
+/** Taps must land within this window of each other to count towards the same run. */
 private const val BRAND_TAP_WINDOW_MS = 2600L
+
 private const val BRAND_TAPS_TO_SUMMON = 4
