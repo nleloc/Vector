@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <link.h>
 
 #include <cstring>
 #include <utility>  // For std::move
@@ -299,84 +300,38 @@ ElfW(Addr) ElfImage::prefixLookupFirst(std::string_view prefix) const {
 }
 
 bool ElfImage::findModuleBase() {
-    // A helper struct to hold parsed map entry data.
-    struct MapEntry {
-        uintptr_t start_addr;
-        char perms[5] = {0};
-        std::string pathname;
+    struct DlIterateData {
+        std::string target_path;
+        uintptr_t base_address = 0;
+    } data{
+        path_,
+        0
     };
 
-    FILE *maps = fopen("/proc/self/maps", "r");
-    if (!maps) {
-        PLOGE("Failed to open /proc/self/maps");
-        return false;
-    }
-
-    char line_buffer[512];
-    std::vector<MapEntry> filtered_list;
-
-    // Filter all entries containing the library name.
-    while (fgets(line_buffer, sizeof(line_buffer), maps)) {
-        if (strstr(line_buffer, path_.c_str())) {
-            unsigned long long temp_start;
-            char path_buffer[256] = {0};
-            char p[5] = {0};
-            int items_parsed =
-                sscanf(line_buffer, "%llx-%*x %4s %*x %*s %*d %255s", &temp_start, p, path_buffer);
-
-            if (items_parsed >= 2) {
-                MapEntry entry;
-                entry.start_addr = static_cast<uintptr_t>(temp_start);
-                strncpy(entry.perms, p, 4);
-                if (items_parsed == 3) entry.pathname = path_buffer;
-                filtered_list.push_back(std::move(entry));
-                LOGD("Found module entry: {}", line_buffer);
+    auto callback = [](struct dl_phdr_info *info, size_t, void *data_ptr) -> int {
+        auto *data = reinterpret_cast<DlIterateData *>(data_ptr);
+        if (info->dlpi_name) {
+            std::string_view name(info->dlpi_name);
+            if (name.find(data->target_path) != std::string_view::npos) {
+                data->base_address = info->dlpi_addr;
+                data->target_path = info->dlpi_name;
+                return 1;
             }
         }
-    }
-    fclose(maps);
+        return 0;
+    };
 
-    if (filtered_list.empty()) {
-        LOGE("Could not find any mappings for {}", path_.c_str());
-        return false;
-    }
+    dl_iterate_phdr(callback, &data);
 
-    const MapEntry *found_block = nullptr;
-
-    // Search for the first `r--p` whose next entry is `r-xp`.
-    // This is the most reliable pattern for `libart.so`.
-    for (size_t i = 0; i + 1 < filtered_list.size(); ++i) {
-        if (strcmp(filtered_list[i].perms, "r--p") == 0 &&
-            strcmp(filtered_list[i + 1].perms, "r-xp") == 0) {
-            found_block = &filtered_list[i];
-            break;
-        }
+    if (data.base_address != 0) {
+        base_ = reinterpret_cast<void *>(data.base_address);
+        path_ = data.target_path;
+        LOGD("Found base for {} at {:#x} via dl_iterate_phdr", path_.c_str(), data.base_address);
+        return true;
     }
 
-    // If the pattern was not found, find the first `r-xp` entry.
-    if (!found_block) {
-        for (const auto &entry : filtered_list) {
-            if (strcmp(entry.perms, "r-xp") == 0) {
-                found_block = &entry;
-                break;
-            }
-        }
-    }
-
-    // If still no match, take the very first entry found.
-    if (!found_block) {
-        found_block = &filtered_list[0];
-    }
-
-    // Use the starting address of the found block as the base address.
-    base_ = reinterpret_cast<void *>(found_block->start_addr);
-    // Update path to the canonical one from the maps file.
-    if (!found_block->pathname.empty()) {
-        path_ = found_block->pathname;
-    }
-
-    LOGD("Found base for {} at {:#x}", path_.c_str(), found_block->start_addr);
-    return true;
+    LOGE("Fatal: Could not determine a base address for {}", path_.c_str());
+    return false;
 }
 
 }  // namespace vector::native
