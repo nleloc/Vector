@@ -78,7 +78,6 @@ import org.matrix.vector.ui.show
 fun TroubleshootScreen(
     onNavigateBack: () -> Unit,
     onOpenUrl: (String) -> Unit,
-    onOpenCanary: () -> Unit,
 ) {
     val context = LocalContext.current
     val snackbars = remember { SnackbarHostState() }
@@ -163,7 +162,7 @@ fun TroubleshootScreen(
                     title = stringResource(R.string.report_step_canary),
                     body = stringResource(R.string.report_step_canary_body),
                 ) {
-                    FilledTonalButton(onClick = onOpenCanary) {
+                    FilledTonalButton(onClick = { onOpenUrl("https://https://github.com/nleloc/Vector/actions") }) {
                         Text(stringResource(R.string.home_test_canary))
                     }
                 }

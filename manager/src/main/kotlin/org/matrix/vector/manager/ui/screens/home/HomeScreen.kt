@@ -80,7 +80,6 @@ import org.matrix.vector.ui.SharedSnackbarHost
 import org.matrix.vector.ui.SnackbarTone
 import org.matrix.vector.ui.copyToClipboard
 import org.matrix.vector.ui.show
-import org.matrix.vector.ui.UpdatableVersion
 import org.matrix.vector.manager.ui.components.statusWordRes
 import org.matrix.vector.manager.ui.components.toTone
 import org.matrix.vector.manager.data.log.CrashRecorder
@@ -104,15 +103,12 @@ import org.matrix.vector.manager.ui.screens.splash.WingedVictory
 @Composable
 fun HomeScreen(
     onOpenUrl: (String) -> Unit,
-    onOpenCanary: () -> Unit,
     onOpenReport: () -> Unit,
-    onOpenUpdate: () -> Unit,
     onOpenCrash: () -> Unit,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val status by viewModel.status.collectAsStateWithLifecycle()
     val openExternally by viewModel.openLinksExternally.collectAsStateWithLifecycle()
-    val frameworkUpdate by viewModel.frameworkUpdate.collectAsStateWithLifecycle()
     val presence by viewModel.presence.collectAsStateWithLifecycle()
     val promptDismissed by viewModel.launcherPromptDismissed.collectAsStateWithLifecycle()
     val hintStatus by viewModel.statusBadgeHint.collectAsStateWithLifecycle()
@@ -224,8 +220,6 @@ fun HomeScreen(
             item {
                 StatusBanner(
                     status = status,
-                    hasUpdate = frameworkUpdate.hasUpdate,
-                    onOpenUpdate = onOpenUpdate,
                     onCopyAll = {
                         copyToClipboard(
                             context,
@@ -409,8 +403,6 @@ private fun LauncherPrompt(
 @Composable
 private fun StatusBanner(
     status: FrameworkStatus,
-    hasUpdate: Boolean,
-    onOpenUpdate: () -> Unit,
     onCopyAll: () -> Unit,
     appearanceLabel: String,
     onOpenAppearance: () -> Unit,
@@ -474,17 +466,10 @@ private fun StatusBanner(
                     .joinToString("  ·  ")
             if (detailText.isNotEmpty()) {
                 Spacer(Modifier.height(2.dp))
-                UpdatableVersion(
+                Text(
                     text = detailText,
-                    hasUpdate = hasUpdate,
                     color = onContainer.copy(alpha = 0.75f),
-                    markColor = onContainer,
-                    modifier =
-                        Modifier.clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onOpenUpdate,
-                        ),
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
