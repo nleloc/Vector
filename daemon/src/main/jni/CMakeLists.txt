@@ -9,6 +9,7 @@ set(SOURCES
         dex2oat.cpp
         logcat.cpp
         obfuscation.cpp
+        ${VECTOR_ROOT}/native/src/core/atexit.cpp
         )
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
