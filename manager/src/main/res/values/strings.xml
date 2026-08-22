@@ -153,6 +153,8 @@
     <string name="appearance_dynamic_color">Colours from wallpaper</string>
     <string name="appearance_amoled">True black in dark mode</string>
     <string name="appearance_amoled_summary">Saves power on OLED screens.</string>
+    <string name="appearance_ui_style_material">Material</string>
+    <string name="appearance_ui_style_miuix">MIUIX</string>
     <string name="egg_two_more">Two more times…</string>
     <string name="egg_one_more">One more time…</string>
 

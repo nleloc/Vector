@@ -76,6 +76,7 @@ import org.matrix.vector.ui.ambience.AmbienceKind
 import org.matrix.vector.ui.navigation.LocalNavigator
 import org.matrix.vector.ui.theme.SeedScheme
 import org.matrix.vector.ui.theme.ThemeMode
+import org.matrix.vector.ui.theme.UiStyle
 import org.matrix.vector.ui.R as UiR
 
 /**
@@ -109,6 +110,7 @@ fun HomeAppearanceSheet(onDismiss: () -> Unit) {
     // nothing about it changes between here and there.
     val navigator = LocalNavigator.current
     val themeMode by settings.themeMode.collectAsStateWithLifecycle()
+    val uiStyle by settings.uiStyle.collectAsStateWithLifecycle()
     val dynamicColor by settings.dynamicColor.collectAsStateWithLifecycle()
     val amoled by settings.amoledBlack.collectAsStateWithLifecycle()
     val seed by settings.seedColor.collectAsStateWithLifecycle()
@@ -144,6 +146,11 @@ LocalizedOverlay {
             BrightnessSelector(
                 selected = ThemeMode.from(themeMode),
                 onSelect = { settings.setThemeMode(it.key) },
+            )
+
+            StyleSelector(
+                selected = UiStyle.from(uiStyle),
+                onSelect = { settings.setUiStyle(it.key) },
             )
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -507,6 +514,28 @@ private fun ThemeMode.labelRes(): Int =
         ThemeMode.System -> R.string.appearance_theme_system
         ThemeMode.Light -> R.string.appearance_theme_light
         ThemeMode.Dark -> R.string.appearance_theme_dark
+    }
+
+/** Which design system to render: Material or Miuix */
+@Composable
+private fun StyleSelector(selected: UiStyle, onSelect: (UiStyle) -> Unit) {
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp)) {
+        UiStyle.entries.forEachIndexed { index, style ->
+            SegmentedButton(
+                selected = selected == style,
+                onClick = { onSelect(style) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = UiStyle.entries.size),
+                icon = {},
+                label = { Text(stringResource(style.labelRes())) },
+            )
+        }
+    }
+}
+
+private fun UiStyle.labelRes(): Int =
+    when (this) {
+        UiStyle.Material -> R.string.appearance_ui_style_material
+        UiStyle.Miuix -> R.string.appearance_ui_style_miuix
     }
 
 // The ambience kind now lives in the shared UI library and carries only a key; its localized name is

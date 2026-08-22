@@ -425,4 +425,6 @@
     <string name="launcher_prompt_title">У Vector пока нет значка</string>
     <string name="launcher_prompt_body">Vector работает внутри чужого процесса, а не установлен, поэтому в лаунчере ничего не появляется и очевидного пути обратно нет. Добавьте ярлык на главный экран или установите Vector как обычное приложение.</string>
     <string name="launcher_prompt_never">Больше не спрашивать</string>
+    <string name="appearance_ui_style_material">Material</string>
+    <string name="appearance_ui_style_miuix">MIUIX</string>
 </resources>

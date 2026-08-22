@@ -399,4 +399,6 @@
     <string name="launcher_prompt_title">Vector のアイコンはまだありません</string>
     <string name="launcher_prompt_body">Vector はインストールされるのではなく、別のプロセス内で実行されるため、ランチャーには何も表示されず、Vector に戻ってくる手段もありません。ホーム画面にショートカットを作成するか、通常のアプリとしてインストールしてください。</string>
     <string name="launcher_prompt_never">今後表示しない</string>
+    <string name="appearance_ui_style_material">Material</string>
+    <string name="appearance_ui_style_miuix">MIUIX</string>
 </resources>

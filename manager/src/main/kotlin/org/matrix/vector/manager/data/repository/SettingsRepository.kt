@@ -34,6 +34,9 @@ class SettingsRepository(context: Context) : StoreSettings, NetworkSettings {
     private val _amoledBlack = MutableStateFlow(prefs.getBoolean("amoled_black", false))
     val amoledBlack: StateFlow<Boolean> = _amoledBlack.asStateFlow()
 
+    private val _uiStyle = MutableStateFlow(prefs.getString("ui_style", "material") ?: "material")
+    val uiStyle: StateFlow<String> = _uiStyle.asStateFlow()
+
     /**
      * The colour every other colour is derived from, when dynamic colour is off.
      *
@@ -492,6 +495,11 @@ class SettingsRepository(context: Context) : StoreSettings, NetworkSettings {
 
     fun setFloatingNavY(fraction: Float) {
         prefs.edit().putFloat("floating_nav_y", fraction).apply()
+    }
+
+    fun setUiStyle(style: String) {
+        prefs.edit().putString("ui_style", style).apply()
+        _uiStyle.value = style
     }
 
     fun setThemeMode(mode: String) {

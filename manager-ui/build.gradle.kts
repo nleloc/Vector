@@ -40,4 +40,10 @@ dependencies {
     api(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.webkit)
+
+    // MIUIX
+    // Hardcoded version to avoid breaking changes :p
+    implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.3")
+    implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.3")
+    implementation("top.yukonga.miuix.kmp:miuix-icons-android:0.9.3")
 }
