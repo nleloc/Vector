@@ -2,7 +2,6 @@ package org.matrix.vector.manager.ui.screens.home
 
 import android.os.Build
 import android.content.Context
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,36 +13,28 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.AddToHomeScreen
-import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.InstallMobile
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Switch
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -51,8 +42,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import org.matrix.vector.ipc.IManagerService
 import org.matrix.vector.manager.BuildConfig
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -64,18 +53,12 @@ import androidx.compose.ui.draw.alpha
 import android.content.res.Configuration
 import java.util.Locale
 import org.matrix.vector.manager.R
-import org.matrix.vector.ui.R as UiR
 import org.matrix.vector.manager.data.log.CrashRecorder
 import org.matrix.vector.manager.data.model.ManagerCopy
 import org.matrix.vector.manager.data.model.XposedApi
 import org.matrix.vector.manager.data.log.CrashReport
 import org.matrix.vector.manager.data.model.buildStamp
 import org.matrix.vector.manager.data.repository.ManagerInstallStep
-import org.matrix.vector.ui.SnackbarTone
-import org.matrix.vector.ui.SharedSnackbarHost
-import org.matrix.vector.ui.copyToClipboard
-import org.matrix.vector.ui.show
-import kotlinx.coroutines.launch
 import org.matrix.vector.ui.theme.Mono
 
 /**
@@ -85,186 +68,83 @@ import org.matrix.vector.ui.theme.Mono
  * user of a root framework needs to know what broke and what it costs them, not merely that
  * something did. The whole page goes to the clipboard from the top bar.
  */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SystemStatusScreen(
-    onNavigateBack: () -> Unit,
-    onOpenCrash: () -> Unit,
-    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
+
+internal fun LazyListScope.systemStatusSection(
+    status: FrameworkStatus,
+    sections: List<Pair<String, List<InfoItem>>>,
+    crash: CrashReport?,
+    onOpenCrashTrace: () -> Unit,
+    onClearCrash: () -> Unit,
+    statusNotification: Boolean,
+    hiddenIcon: Boolean,
+    daemonAlive: Boolean,
+    presence: ManagerPresence,
+    managerInstall: ManagerInstallStep,
+    onSetStatusNotification: (Boolean) -> Unit,
+    onSetForcedLauncherIcons: (Boolean) -> Unit,
+    onCreateShortcut: () -> Unit,
+    onEnableNotification: () -> Unit,
+    onInstall: () -> Unit,
+    onRemoveConflicting: () -> Unit,
 ) {
-    val status by viewModel.status.collectAsStateWithLifecycle()
-    val device = viewModel.device
-    val context = LocalContext.current
-    val statusNotification by viewModel.statusNotification.collectAsStateWithLifecycle()
-    val hiddenIcon by viewModel.hiddenIcon.collectAsStateWithLifecycle()
-    val presence by viewModel.presence.collectAsStateWithLifecycle()
-    val managerInstall by viewModel.managerInstall.collectAsStateWithLifecycle()
-
-    // Both the shortcut and the install can be undone from outside the app while it is open —
-    // dragged off the home screen, uninstalled from Settings — so what the rows offer is re-read on
-    // arrival rather than trusted from whenever the ViewModel was built.
-    LaunchedEffect(Unit) { viewModel.refreshPresence() }
-
-    val sections = buildSections(status, device, context)
-    // The same page again, in English, for the clipboard.
-    //
-    // This text exists to be pasted into an issue, and the person reading it there is a maintainer
-    // who may not read the language the reporter's phone is set to. Copying what is on screen is
-    // the obvious behaviour and the wrong one: a status report in Vietnamese helps nobody triage
-    // it, and the reporter cannot be expected to switch languages first. The screen stays in the
-    // reader's language; the clipboard is for someone else.
-    val englishSections =
-        remember(status, device) {
-            val english =
-                context.createConfigurationContext(
-                    Configuration(context.resources.configuration).apply {
-                        setLocale(Locale.ENGLISH)
-                    }
-                )
-            buildSections(status, device, english)
+    if (status.issues.isNotEmpty()) {
+        items(status.issues, key = { it.name }) { issue -> IssueCard(issue) }
+        item { Spacer(Modifier.height(4.dp)) }
+    }
+    crash?.let { report ->
+        item(key = "crashes") {
+            CrashCard(report = report, onOpenTrace = onOpenCrashTrace, onClear = onClearCrash)
+            Spacer(Modifier.height(4.dp))
         }
-    // Read once per visit rather than watched: a crash cannot be recorded while this screen is on
-    // screen, because the process that would record it is the one drawing it.
-    var crash by remember { mutableStateOf(CrashRecorder.newest(context)) }
-    // The two switches below belong to the framework, so they are only live while it is.
-    val daemonAlive = status.daemonUsable
-    val snackbars = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val copied = stringResource(UiR.string.copied)
-    val shortcutRefused = stringResource(R.string.launcher_shortcut_refused)
-    val installDone = stringResource(R.string.launcher_install_done)
-
-    Scaffold(
-        snackbarHost = { SharedSnackbarHost(snackbars) },
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.system_status)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            // Copied as it reads, headings and all — this text ends up pasted
-                            // into an issue, where the grouping is as useful as it is on screen.
-                            copyToClipboard(
-                                context,
-                                englishSections.joinToString("\n\n") { (heading, items) ->
-                                    heading +
-                                        items.joinToString("") {
-                                            // With the detail, which the screen only sets apart
-                                            // rather than shortens. Where a build came from is
-                                            // half of what makes the stamp worth pasting.
-                                            "\n  ${it.label}: ${it.value}${it.detail.orEmpty()}"
-                                        }
-                                },
-                                BuildConfig.MANAGER_PACKAGE_NAME,
-                            )
-                            scope.launch { snackbars.show(copied, SnackbarTone.Success) }
-                        }
-                    ) {
-                        Icon(
-                            Icons.Rounded.ContentCopy,
-                            contentDescription = stringResource(UiR.string.action_copy_all),
-                        )
-                    }
-                },
+    }
+    sections.forEach { (heading, items) ->
+        item(key = "h:$heading") { SectionHeading(heading) }
+        items(items, key = { it.label }) { row -> InfoRow(row) }
+    }
+    item {
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(4.dp))
+    }
+    item {
+        FrameworkToggle(
+            title = stringResource(R.string.status_notification),
+            subtitle = stringResource(R.string.status_notification_summary),
+            checked = statusNotification,
+            enabled = daemonAlive,
+            onCheckedChange = onSetStatusNotification,
+        )
+    }
+    item {
+        FrameworkToggle(
+            title = stringResource(R.string.force_launcher_icons),
+            subtitle = stringResource(R.string.force_launcher_icons_summary),
+            checked = hiddenIcon,
+            enabled = daemonAlive,
+            onCheckedChange = onSetForcedLauncherIcons,
+        )
+    }
+    if (presence.parasitic) {
+        item {
+            Spacer(Modifier.height(20.dp))
+            OpeningVectorCard(
+                presence = presence,
+                install = managerInstall,
+                daemonAlive = daemonAlive,
+                onCreateShortcut = onCreateShortcut,
+                onEnableNotification = onEnableNotification,
+                onInstall = onInstall,
+                onRemoveConflicting = onRemoveConflicting,
             )
         }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            if (status.issues.isNotEmpty()) {
-                items(status.issues, key = { it.name }) { issue -> IssueCard(issue) }
-                item { Spacer(Modifier.height(4.dp)) }
-            }
-            crash?.let { report ->
-                item(key = "crashes") {
-                    CrashCard(
-                        report = report,
-                        onOpenTrace = onOpenCrash,
-                        onClear = {
-                            CrashRecorder.clear(context)
-                            crash = null
-                        },
-                    )
-                    Spacer(Modifier.height(4.dp))
-                }
-            }
-            sections.forEach { (heading, items) ->
-                item(key = "h:$heading") { SectionHeading(heading) }
-                items(items, key = { it.label }) { row -> InfoRow(row) }
-            }
-
-            // Framework behaviour, set from the screen that reports on the framework.
-            item {
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider()
-                Spacer(Modifier.height(4.dp))
-            }
-            item {
-                FrameworkToggle(
-                    title = stringResource(R.string.status_notification),
-                    subtitle = stringResource(R.string.status_notification_summary),
-                    checked = statusNotification,
-                    enabled = daemonAlive,
-                    onCheckedChange = viewModel::setStatusNotification,
-                )
-            }
-            item {
-                FrameworkToggle(
-                    title = stringResource(R.string.force_launcher_icons),
-                    subtitle = stringResource(R.string.force_launcher_icons_summary),
-                    checked = hiddenIcon,
-                    enabled = daemonAlive,
-                    onCheckedChange = viewModel::setForcedLauncherIcons,
-                )
-            }
-
-            // How to get back in. Only parasitically: installed, the manager has a launcher icon
-            // like any other app and none of this means anything.
-            if (presence.parasitic) {
-                item {
-                    Spacer(Modifier.height(20.dp))
-                    OpeningVectorCard(
-                        presence = presence,
-                        install = managerInstall,
-                        daemonAlive = daemonAlive,
-                        onCreateShortcut = {
-                            if (!viewModel.requestShortcut()) {
-                                scope.launch {
-                                    snackbars.show(shortcutRefused, SnackbarTone.Failure)
-                                }
-                            }
-                        },
-                        onEnableNotification = { viewModel.setStatusNotification(true) },
-                        onInstall = viewModel::installManagerApp,
-                        onRemoveConflicting = viewModel::removeConflictingManager,
-                    )
-                }
-            }
-        }
-    }
-
-    // Success only. A failure stays on the card, where it can still be read by someone who was not
-    // looking at this screen when it happened — which is the common case, since the install runs
-    // while they are free to go elsewhere. Acknowledged first, and shown on the screen's own scope
-    // rather than this effect's: acknowledging changes the state this effect is keyed on and so
-    // cancels it, and `show` suspends for as long as the snackbar is up.
-    LaunchedEffect(managerInstall) {
-        if (managerInstall !is ManagerInstallStep.Done) return@LaunchedEffect
-        viewModel.acknowledgeManagerInstall()
-        scope.launch { snackbars.show(installDone, SnackbarTone.Success) }
     }
 }
+
+internal fun buildStatusSections(
+    status: FrameworkStatus,
+    device: DeviceInfo,
+    context: Context,
+): List<Pair<String, List<InfoItem>>> = buildSections(status, device, context)
 
 /**
  * The one card that answers "how do I open this again".
@@ -284,7 +164,7 @@ fun SystemStatusScreen(
  * them, so a row with no control would be a row that only ever reports.
  */
 @Composable
-private fun OpeningVectorCard(
+internal fun OpeningVectorCard(
     presence: ManagerPresence,
     install: ManagerInstallStep,
     daemonAlive: Boolean,
@@ -506,7 +386,7 @@ private const val SECRET_CODE = "*#*#832867#*#*"
 private val ROUTE_ROW_HEIGHT = 48.dp
 
 @Composable
-private fun IssueCard(issue: HealthIssue) {
+internal fun IssueCard(issue: HealthIssue) {
     val (title, summary) =
         when (issue) {
             HealthIssue.SepolicyNotLoaded ->
@@ -556,7 +436,7 @@ private fun IssueCard(issue: HealthIssue) {
  * row of its own.
  */
 @Composable
-private fun CrashCard(report: CrashReport, onOpenTrace: () -> Unit, onClear: () -> Unit) {
+internal fun CrashCard(report: CrashReport, onOpenTrace: () -> Unit, onClear: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     OutlinedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -643,7 +523,7 @@ private fun CrashFact(
  * two thirds of the characters and almost never the answer.
  */
 @Composable
-private fun InfoRow(row: InfoItem) {
+internal fun InfoRow(row: InfoItem) {
     val colors = MaterialTheme.colorScheme
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -691,14 +571,14 @@ private fun InfoRow(row: InfoItem) {
 }
 
 /** Whether a fact is one that can be wrong, and whether it currently is. */
-private enum class Health {
+internal enum class Health {
     Good,
     Bad,
     Neutral,
 }
 
 /** A row of the status page. */
-private data class InfoItem(
+internal data class InfoItem(
     val label: String,
     val value: String,
     /** The tail of the value that is context rather than identity; set apart, never dropped. */
@@ -727,7 +607,7 @@ private fun buildRow(label: String, number: String, reported: String?): InfoItem
 
 /** A heading, so the page reads as three short lists rather than one long one. */
 @Composable
-private fun SectionHeading(text: String) {
+internal fun SectionHeading(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleSmall,
@@ -743,7 +623,7 @@ private fun SectionHeading(text: String) {
  * Grouped because they answer three different questions — what is running, is it working, and on
  * what — so a reader after one of them does not have to scan all ten rows to find it.
  */
-private fun buildSections(
+internal fun buildSections(
     status: FrameworkStatus,
     device: DeviceInfo,
     context: Context,
@@ -845,7 +725,7 @@ private fun dex2oatLabel(context: Context, state: Int): String =
     )
 
 @Composable
-private fun FrameworkToggle(
+internal fun FrameworkToggle(
     title: String,
     subtitle: String,
     checked: Boolean,
