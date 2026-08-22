@@ -114,14 +114,12 @@ fun HomeAppearanceSheet(onDismiss: () -> Unit) {
     val seed by settings.seedColor.collectAsStateWithLifecycle()
     val ambience by settings.headerAmbience.collectAsStateWithLifecycle()
     val floating by settings.floatingNav.collectAsStateWithLifecycle()
-    val contributorOrder by settings.contributorOrder.collectAsStateWithLifecycle()
     val resolvedDark =
         when (ThemeMode.from(themeMode)) {
             ThemeMode.System -> isSystemInDarkTheme()
             ThemeMode.Light -> false
             ThemeMode.Dark -> true
         }
-    val windowMonths by settings.activityWindowMonths.collectAsStateWithLifecycle()
     val openExternally by settings.openLinksExternally.collectAsStateWithLifecycle()
 
     // Every value stays enabled, deliberately. Dropping PartiallyExpanded removes the half-height
@@ -164,53 +162,6 @@ LocalizedOverlay {
                 onCheckedChange = settings::setAmoledBlack,
             )
 
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-            SheetHeading(stringResource(R.string.settings_ambience), Icons.Rounded.Waves)
-            ChoiceRow {
-                AmbienceKind.entries.forEach { kind ->
-                    FilterChip(
-                        selected = AmbienceKind.from(ambience) == kind,
-                        onClick = { settings.setHeaderAmbience(kind.key) },
-                        label = { Text(stringResource(kind.labelRes())) },
-                    )
-                }
-            }
-
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-            SheetHeading(stringResource(R.string.settings_activity), Icons.Rounded.History)
-            ChoiceRow {
-                // Zero is "as far back as there is", last because it is the widest.
-                listOf(1, 3, 6, 12, 0).forEach { months ->
-                    FilterChip(
-                        selected = windowMonths == months,
-                        onClick = { settings.setActivityWindowMonths(months) },
-                        label = {
-                            Text(
-                                if (months == 0) {
-                                    stringResource(R.string.settings_window_all)
-                                } else {
-                                    pluralStringResource(
-                                        R.plurals.settings_window_months,
-                                        months,
-                                        months,
-                                    )
-                                }
-                            )
-                        },
-                    )
-                }
-            }
-            ChoiceRow {
-                ContributorOrder.entries.forEach { option ->
-                    FilterChip(
-                        selected = ContributorOrder.from(contributorOrder) == option,
-                        onClick = { settings.setContributorOrder(option.key) },
-                        label = { Text(stringResource(option.labelRes)) },
-                    )
-                }
-            }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
             SheetHeading(stringResource(R.string.settings_navigation), Icons.Rounded.Dashboard)

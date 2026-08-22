@@ -41,7 +41,6 @@ import org.matrix.vector.manager.ui.navigation.Web
 import org.matrix.vector.manager.ui.screens.canary.CanaryScreen
 import org.matrix.vector.manager.ui.screens.home.CrashTraceScreen
 import org.matrix.vector.manager.ui.screens.home.HomeScreen
-import org.matrix.vector.manager.ui.screens.home.SystemStatusScreen
 import org.matrix.vector.manager.ui.screens.modules.ModulesScreen
 import org.matrix.vector.manager.ui.screens.modules.ScopeScreen
 import org.matrix.vector.manager.ui.screens.report.TroubleshootScreen
@@ -198,11 +197,11 @@ fun VectorApp() {
 private fun EntryProviderScope<NavKey>.registerRoutes(navigator: Navigator) {
     entry<TopLevelRoute.Home> {
         HomeScreen(
-            onOpenStatus = { navigator.go(SystemStatus) },
             onOpenUrl = { url -> navigator.go(Web(url)) },
             onOpenCanary = { navigator.go(Canary) },
             onOpenReport = { navigator.go(Troubleshoot) },
             onOpenUpdate = { navigator.go(FrameworkUpdate()) },
+            onOpenCrash = { navigator.go(CrashTrace) },
         )
     }
     entry<TopLevelRoute.Modules> {
@@ -240,12 +239,6 @@ private fun EntryProviderScope<NavKey>.registerRoutes(navigator: Navigator) {
             host = remember(route.packageName) { VectorStoreInstallHost(route.packageName) },
             fetchSubresource = { fetchStoreSubresource(ServiceLocator.http, it) },
             contextForWebView = { ctx, dark -> ctx.forWebView(dark) },
-        )
-    }
-    entry<SystemStatus> {
-        SystemStatusScreen(
-            onNavigateBack = { navigator.back() },
-            onOpenCrash = { navigator.go(CrashTrace) },
         )
     }
     entry<CrashTrace> { CrashTraceScreen(onNavigateBack = { navigator.back() }) }
