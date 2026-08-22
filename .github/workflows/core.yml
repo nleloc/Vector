@@ -57,13 +57,13 @@ jobs:
       # to it and cannot be given one, so a fork builds unsigned, as does any branch that is not
       # master: neither publishes anything.
       - name: Write key
-        if: ${{ ( github.event_name != 'pull_request' && github.ref == 'refs/heads/master' ) || github.ref_type == 'tag' }}
+        if: ${{ github.event_name != 'pull_request' }}
         env:
           KEY_STORE: ${{ secrets.KEY_STORE }}
           KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
           ALIAS: ${{ secrets.ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          IS_UPSTREAM: ${{ github.repository_owner == 'JingMatrix' }}
+          IS_UPSTREAM: ${{ github.repository_owner == 'nleloc' }}
         run: |
           set -euo pipefail
           if [ -z "$KEY_STORE" ]; then
