@@ -305,7 +305,7 @@
     <!-- Generic -->
     <string name="back">Back</string>
     <string name="retry">Retry</string>
-    <string name="app_name" translatable="false">Vector</string>
+    <string name="app_name" translatable="false">NVector</string>
 
     <string name="appearance_color">Colour</string>
     <string name="appearance_custom_color">Pick a colour</string>
