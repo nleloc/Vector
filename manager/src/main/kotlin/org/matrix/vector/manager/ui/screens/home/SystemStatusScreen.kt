@@ -47,6 +47,7 @@ import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.draw.alpha
 import android.content.res.Configuration
 import java.util.Locale
@@ -752,6 +753,8 @@ internal fun FrameworkToggle(
                     enabled = enabled,
                     role = Role.Switch,
                     onValueChange = onCheckedChange,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
                 )
                 .padding(vertical = 10.dp)
                 .alpha(if (enabled) 1f else 0.38f),
