@@ -31,11 +31,8 @@ import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -87,6 +84,13 @@ import org.matrix.vector.manager.ui.screens.splash.WingedVictory
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
 /**
  * Home is the front page of the *project*, not only of the app.
@@ -436,44 +440,47 @@ private fun LauncherPrompt(
 
 @Composable
 private fun StatusBanner(
-  status: FrameworkStatus,
+    status: FrameworkStatus,
 ) {
     val healthy = status.issues.isEmpty() && status.daemonUsable
-    val container =
-        if (healthy) MaterialTheme.colorScheme.primaryContainer
-        else MaterialTheme.colorScheme.errorContainer
-    val onContainer =
-        if (healthy) MaterialTheme.colorScheme.onPrimaryContainer
-        else MaterialTheme.colorScheme.onErrorContainer
+
+
+    val containerColor = if (healthy) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+    val contentColor = if (healthy) Color(0xFF4CAF50) else Color(0xFFF44336)
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.defaultColors(
-            color = container
-        )
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        colors = CardDefaults.defaultColors(color = containerColor)
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    if (healthy) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
-                    contentDescription = null,
-                    tint = onContainer
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    stringResource(status.state.statusWordRes()),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = onContainer
-                )
-            }
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = if (healthy) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(48.dp)
+            )
 
-            if (status.apiVersion != null) {
-                Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.width(16.dp))
+
+            Column {
                 Text(
-                    text = "API ${status.apiVersion}",
-                    color = onContainer.copy(alpha = 0.75f),
-                    style = MaterialTheme.typography.bodyMedium
+                    text = stringResource(status.state.statusWordRes()),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = contentColor
                 )
+
+                if (status.apiVersion != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "API ${status.apiVersion}",
+                        fontSize = 14.sp,
+                        color = contentColor.copy(alpha = 0.8f)
+                    )
+                }
             }
         }
     }

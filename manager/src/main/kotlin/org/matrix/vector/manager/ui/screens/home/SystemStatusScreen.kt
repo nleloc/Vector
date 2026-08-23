@@ -176,7 +176,12 @@ internal fun OpeningVectorCard(
     onRemoveConflicting: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.surface
+        )
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 stringResource(R.string.launcher_title),
@@ -398,7 +403,12 @@ internal fun IssueCard(issue: HealthIssue) {
             HealthIssue.Dex2oatWrapperBroken ->
                 R.string.issue_dex2oat_title to R.string.issue_dex2oat_summary
         }
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = androidx.compose.ui.graphics.Color(0xFFFFF0F0)
+        )
+    ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
             Icon(
                 Icons.Rounded.WarningAmber,
@@ -440,7 +450,12 @@ internal fun IssueCard(issue: HealthIssue) {
 @Composable
 internal fun CrashCard(report: CrashReport, onOpenTrace: () -> Unit, onClear: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.defaultColors(
+            color = androidx.compose.ui.graphics.Color(0xFFFFF0F0)
+        )
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Icon(Icons.Rounded.WarningAmber, contentDescription = null, tint = colors.error)
