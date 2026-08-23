@@ -62,6 +62,7 @@ import org.matrix.vector.ui.theme.Mono
 
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
 
 /**
  * Everything a bug report needs about this device, on one page.
