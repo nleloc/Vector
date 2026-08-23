@@ -162,4 +162,9 @@ dependencies {
 
     // Tooling dependencies, debug builds only, for UI previews.
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // MIUIX
+    implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.3")
+    implementation("top.yukonga.miuix.kmp:miuix-preference-android:0.9.3")
+    implementation("top.yukonga.miuix.kmp:miuix-icons-android:0.9.3")
 }

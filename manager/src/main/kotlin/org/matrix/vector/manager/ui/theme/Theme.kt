@@ -16,6 +16,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import org.matrix.vector.manager.di.ServiceLocator
 
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.theme.darkColorScheme
+import top.yukonga.miuix.kmp.theme.lightColorScheme
+
 @Composable
 fun VectorTheme(content: @Composable () -> Unit) {
     val settings = ServiceLocator.settings
@@ -44,11 +48,15 @@ fun VectorTheme(content: @Composable () -> Unit) {
         }
     if (dark && amoled) scheme = scheme.toAmoled()
 
-    MaterialExpressiveTheme(
-        colorScheme = scheme,
-        // The expressive motion scheme is what makes a state change feel caused rather than
-        // scheduled. It drives the status indicator's shape morph and the nav transitions.
-        motionScheme = MotionScheme.expressive(),
-        content = content,
-    )
+    val miuixColors = if (dark) darkColorScheme() else lightColorScheme()
+
+    MiuixTheme(
+        colors = miuixColors
+    ) {
+        MaterialExpressiveTheme(
+            colorScheme = scheme,
+            motionScheme = MotionScheme.expressive(),
+            content = content,
+        )
+    }
 }
