@@ -31,13 +31,9 @@ import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Translate
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -87,6 +83,9 @@ import org.matrix.vector.manager.data.repository.ManagerInstallStep
 import org.matrix.vector.manager.BuildConfig
 import org.matrix.vector.ui.R as UiR
 import org.matrix.vector.manager.ui.screens.splash.WingedVictory
+
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.Scaffold
 
 /**
  * Home is the front page of the *project*, not only of the app.
@@ -202,20 +201,13 @@ fun HomeScreen(
         }
     }
 
-    Scaffold(
-        // The header draws its own status-bar inset so it can run under the bar; letting the
-        // Scaffold consume it here would leave a band of plain background above the pane. The
-        // bottom is the Scaffold's to reserve, though: with the panels floating there is no
-        // navigation container underneath to have taken it, and the last row of the feed would end
-        // up behind three-button navigation. Already-consumed insets are excluded from this, so it
-        // still adds nothing in the arrangements where a container is there.
-        snackbarHost = { SharedSnackbarHost(snackbars) },
-    ) { padding ->
-        val listState = rememberLazyListState()
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.padding(padding).fillMaxWidth(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold { padding ->
+            val listState = rememberLazyListState()
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.padding(padding).fillMaxWidth(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
         ) {
             item {
                 Text(
@@ -299,7 +291,16 @@ fun HomeScreen(
                 }
             }
         }
-     }
+    }
+
+    Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 48.dp)
+        ) {
+            SharedSnackbarHost(snackbars)
+        }
+    }
  
     LaunchedEffect(managerInstall) {
         if (managerInstall !is ManagerInstallStep.Done) return@LaunchedEffect
@@ -446,18 +447,20 @@ private fun StatusBanner(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = container, contentColor = onContainer),
+        color = container,
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     if (healthy) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
                     contentDescription = null,
+                    tint = onContainer
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     stringResource(status.state.statusWordRes()),
                     style = MaterialTheme.typography.titleMedium,
+                    color = onContainer
                 )
             }
 
