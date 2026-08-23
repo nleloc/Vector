@@ -85,6 +85,7 @@ import org.matrix.vector.ui.R as UiR
 import org.matrix.vector.manager.ui.screens.splash.WingedVictory
 
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Scaffold
 
 /**
@@ -447,7 +448,9 @@ private fun StatusBanner(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        color = container,
+        colors = CardDefaults.defaultColors(
+            color = container
+        )
     ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
