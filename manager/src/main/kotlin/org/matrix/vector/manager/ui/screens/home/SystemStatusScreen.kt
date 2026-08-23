@@ -24,8 +24,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -60,6 +58,9 @@ import org.matrix.vector.manager.data.log.CrashReport
 import org.matrix.vector.manager.data.model.buildStamp
 import org.matrix.vector.manager.data.repository.ManagerInstallStep
 import org.matrix.vector.ui.theme.Mono
+
+import top.yukonga.miuix.kmp.basic.Switch
+import top.yukonga.miuix.kmp.basic.Card
 
 /**
  * Everything a bug report needs about this device, on one page.
@@ -174,7 +175,7 @@ internal fun OpeningVectorCard(
     onRemoveConflicting: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 stringResource(R.string.launcher_title),
@@ -396,7 +397,7 @@ internal fun IssueCard(issue: HealthIssue) {
             HealthIssue.Dex2oatWrapperBroken ->
                 R.string.issue_dex2oat_title to R.string.issue_dex2oat_summary
         }
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
             Icon(
                 Icons.Rounded.WarningAmber,
@@ -438,7 +439,7 @@ internal fun IssueCard(issue: HealthIssue) {
 @Composable
 internal fun CrashCard(report: CrashReport, onOpenTrace: () -> Unit, onClear: () -> Unit) {
     val colors = MaterialTheme.colorScheme
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.Top) {
                 Icon(Icons.Rounded.WarningAmber, contentDescription = null, tint = colors.error)
